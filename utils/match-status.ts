@@ -1,5 +1,4 @@
-import type { InferSelectModel } from "drizzle-orm";
-import type { Match, matches } from "../src/db/schema";
+import type { Match } from "../src/db/schema";
 import { MATCH_STATUS, MatchStatus } from "../src/validation/matches";
 
 export function getMatchStatus(
