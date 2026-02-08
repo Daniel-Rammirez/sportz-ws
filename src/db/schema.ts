@@ -1,3 +1,4 @@
+import { InferSelectModel } from "drizzle-orm";
 import {
   pgTable,
   pgEnum,
@@ -22,11 +23,15 @@ export const matches = pgTable("matches", {
   awayTeam: varchar("away_team", { length: 100 }).notNull(),
   status: matchStatusEnum().default("scheduled").notNull(),
   startTime: timestamp("start_time", { withTimezone: true }).notNull(),
-  endTime: timestamp("end_time", { withTimezone: true }),
+  endTime: timestamp("end_time", { withTimezone: true }).notNull(),
   homeScore: integer("home_score").default(0).notNull(),
   awayScore: integer("away_score").default(0).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
+
+export type Match = InferSelectModel<typeof matches>;
 
 export const commentary = pgTable("commentary", {
   id: uuid().defaultRandom().primaryKey(),
@@ -42,5 +47,9 @@ export const commentary = pgTable("commentary", {
   message: text().notNull(),
   metadata: jsonb(),
   tags: text().array(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
+
+export type Commentary = InferSelectModel<typeof commentary>;
