@@ -2,6 +2,12 @@ import { Server } from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import { Match } from "../db/schema";
 
+declare module "ws" {
+  interface WebSocket {
+    isAlive: boolean;
+  }
+}
+
 function sendJson(socket: WebSocket, payload: Record<string, unknown>) {
   if (socket.readyState !== WebSocket.OPEN) return;
 
@@ -22,8 +28,29 @@ export function attachWebSocketServer(server: Server) {
   });
 
   wss.on("connection", (socket) => {
+    socket.isAlive = true;
+
+    socket.on("pong", () => {
+      socket.isAlive = true;
+    });
+
     sendJson(socket, { type: "welcome" });
     socket.on("error", console.error);
+  });
+
+  const interval = setInterval(() => {
+    wss.clients.forEach((socket) => {
+      if (socket.isAlive === false) {
+        return socket.terminate();
+      }
+
+      socket.isAlive = false;
+      socket.ping();
+    });
+  }, 30000);
+
+  wss.on("close", () => {
+    clearInterval(interval);
   });
 
   wss.on("error", (err) => {

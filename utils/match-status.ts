@@ -3,14 +3,14 @@ import { MATCH_STATUS, MatchStatus } from "../src/validation/matches";
 
 export function getMatchStatus(
   startTime: Date,
-  endTime: Date,
+  endTime: Date | null,
   now = new Date(),
 ): MatchStatus {
   if (now < startTime) {
     return MATCH_STATUS.SCHEDULED;
   }
 
-  if (now >= endTime) {
+  if (endTime && now >= endTime) {
     return MATCH_STATUS.FINISHED;
   }
 
