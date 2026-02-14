@@ -9,17 +9,17 @@ export const listCommentaryQuerySchema = matchIdParamSchema.extend({
     .int()
     .positive()
     .max(MAX_COMMENTARY_LIMIT)
-    .optional(),
+    .default(20),
 });
 
 export const createCommentarySchema = z.object({
   minute: z.coerce.number().int().nonnegative(),
-  sequence: z.coerce.number().int().optional(),
-  period: z.string().optional(),
-  eventType: z.string().optional(),
-  actor: z.string().optional(),
-  team: z.string().optional(),
-  message: z.string().min(1, "message is required"),
+  sequence: z.coerce.number().int().nonnegative().optional(),
+  period: z.string().max(50).optional(),
+  eventType: z.string().max(100).optional(),
+  actor: z.string().max(200).optional(),
+  team: z.string().max(200).optional(),
+  message: z.string().min(1, "message is required").max(5000),
   metadata: z.record(z.string(), z.any()).optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.string().max(100)).max(20).optional(),
 });

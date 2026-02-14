@@ -50,8 +50,6 @@ commentaryRouter.get("/", async (req, res) => {
 });
 
 commentaryRouter.post("/", async (req, res) => {
-  // validate matchId in the params
-  // because the route will be ..../matches/2/commentary
   const matchIdValidationResponse = matchIdParamSchema.safeParse(req.params);
 
   if (!matchIdValidationResponse.success) {
@@ -61,7 +59,6 @@ commentaryRouter.post("/", async (req, res) => {
     });
   }
 
-  // validate body to create comment
   const commentaryDataValidationResponse = createCommentarySchema.safeParse(
     req.body,
   );
@@ -74,7 +71,6 @@ commentaryRouter.post("/", async (req, res) => {
   }
 
   try {
-    // after al checks, create the commentary
     const [commentaryCreated] = await db
       .insert(commentary)
       .values({
@@ -86,6 +82,6 @@ commentaryRouter.post("/", async (req, res) => {
     return res.status(201).json({ data: commentaryCreated });
   } catch (error) {
     console.error("Failed to create commentary", error);
-    res.status(500).json({ error: "Failed to create commentary" });
+    return res.status(500).json({ error: "Failed to create commentary" });
   }
 });
