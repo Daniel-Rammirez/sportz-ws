@@ -18,8 +18,10 @@ app.get("/", (_req, res) => {
 app.use("/matches", matchRouter);
 app.use("/matches/:id/commentary", commentaryRouter);
 
-const { broadcastMatchCreated } = attachWebSocketServer(server);
+const { broadcastMatchCreated, broadcastMatchCommentary } =
+  attachWebSocketServer(server);
 app.locals.broadcastMatchCreated = broadcastMatchCreated;
+app.locals.broadcastMatchCommentary = broadcastMatchCommentary;
 
 server.listen(PORT, HOST, () => {
   const baseURL =
