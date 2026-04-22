@@ -6,6 +6,7 @@ export const MESSAGE_TYPES = {
   MATCH_UNSUBSCRIBE: "Match Unsubscribe",
   COMMENTARY: "Commentary",
   MATCH_CREATED: "Match Created",
+  SCORE_UPDATE: "Score Update",
   WELCOME: "Welcome",
 } as const;
 

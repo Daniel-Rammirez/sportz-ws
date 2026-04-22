@@ -116,6 +116,7 @@ export function attachWebSocketServer(server: Server) {
 
     socket.subscriptions = new Set();
 
+    console.log("message sent!");
     sendJsonToOpenChanel(socket, { type: MESSAGE_TYPES.WELCOME });
 
     socket.on("message", (data) => {
@@ -176,5 +177,16 @@ export function attachWebSocketServer(server: Server) {
     });
   }
 
-  return { broadcastMatchCreated, broadcastMatchCommentary };
+  function broadcastScoreUpdate(_matchId: idType, match: Match) {
+    broadcastToAll(wss, {
+      type: MESSAGE_TYPES.SCORE_UPDATE,
+      data: match,
+    });
+  }
+
+  return {
+    broadcastMatchCreated,
+    broadcastMatchCommentary,
+    broadcastScoreUpdate,
+  };
 }
