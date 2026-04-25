@@ -2,11 +2,13 @@ import { Router } from "express";
 import {
   createMatchSchema,
   listMatchesQuerySchema,
+  matchIdParamSchema,
+  updateMatchStatusSchema,
 } from "../validation/matches";
 import { db } from "../db/db";
 import { matches } from "../db/schema";
 import { getMatchStatus } from "../../utils/match-status";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export const matchRouter = Router();
 
@@ -75,5 +77,38 @@ matchRouter.post("/", async (req, res) => {
   } catch (e) {
     console.error("Failed to create match:", e);
     return res.status(500).json({ error: "Failed to create match." });
+  }
+});
+
+matchRouter.patch("/:id/status", async (req, res) => {
+  const parsedParams = matchIdParamSchema.safeParse(req.params);
+  if (!parsedParams.success) {
+    return res.status(400).json({ error: "Invalid match ID.", details: parsedParams.error.issues });
+  }
+
+  const parsedBody = updateMatchStatusSchema.safeParse(req.body);
+  if (!parsedBody.success) {
+    return res.status(400).json({ error: "Invalid payload.", details: parsedBody.error.issues });
+  }
+
+  try {
+    const [updated] = await db
+      .update(matches)
+      .set({ status: parsedBody.data.status })
+      .where(eq(matches.id, parsedParams.data.id))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: "Match not found." });
+    }
+
+    if (res.app.locals.broadcastScoreUpdate) {
+      res.app.locals.broadcastScoreUpdate(updated.id, updated);
+    }
+
+    res.json({ data: updated });
+  } catch (e) {
+    console.error("Failed to update match status:", e);
+    res.status(500).json({ error: "Failed to update match status." });
   }
 });

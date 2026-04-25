@@ -1,19 +1,25 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
-  useCallback,
   type ReactNode,
 } from "react";
+import { MessageType } from "../types";
 
 type MessageHandler = (data: Record<string, unknown>) => void;
 
 interface WebSocketContextType {
   isConnected: boolean;
   send: (data: object) => void;
-  subscribe: (type: string, handler: MessageHandler) => () => void;
+  subscribe: (
+    type: MessageType,
+    handler: MessageHandler,
+  ) => {
+    unsubscribe: () => void;
+  };
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -21,7 +27,11 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const handlersRef = useRef<Map<string, Set<MessageHandler>>>(new Map());
+
+  // here we keep track of all subscriptions per tab
+  const subscriptionsRef = useRef<Map<MessageType, Set<MessageHandler>>>(
+    new Map(),
+  );
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const connect = useCallback(() => {
@@ -35,10 +45,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
     ws.onopen = () => {
+      if (wsRef.current !== ws) return;
       setIsConnected(true);
     };
 
     ws.onclose = () => {
+      if (wsRef.current !== ws) return;
       setIsConnected(false);
       wsRef.current = null;
       reconnectTimeoutRef.current = setTimeout(connect, 3000);
@@ -49,11 +61,14 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     };
 
     ws.onmessage = (event) => {
+      if (wsRef.current !== ws) return;
       try {
         const message = JSON.parse(event.data);
-        const type = message.type as string | undefined;
-        if (type && handlersRef.current.has(type)) {
-          handlersRef.current.get(type)!.forEach((handler) => handler(message));
+        const type = message.type as MessageType | undefined;
+        if (type && subscriptionsRef.current.has(type)) {
+          subscriptionsRef.current
+            .get(type)!
+            .forEach((handler) => handler(message));
         }
       } catch {
         // ignore non-JSON messages
@@ -77,19 +92,24 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const subscribe = useCallback((type: string, handler: MessageHandler) => {
-    if (!handlersRef.current.has(type)) {
-      handlersRef.current.set(type, new Set());
-    }
-    handlersRef.current.get(type)!.add(handler);
-
-    return () => {
-      handlersRef.current.get(type)?.delete(handler);
-      if (handlersRef.current.get(type)?.size === 0) {
-        handlersRef.current.delete(type);
+  const subscribe = useCallback(
+    (type: MessageType, handler: MessageHandler) => {
+      if (!subscriptionsRef.current.has(type)) {
+        subscriptionsRef.current.set(type, new Set());
       }
-    };
-  }, []);
+      subscriptionsRef.current.get(type)!.add(handler);
+
+      const unsubscribe = () => {
+        subscriptionsRef.current.get(type)?.delete(handler);
+        if (subscriptionsRef.current.get(type)?.size === 0) {
+          subscriptionsRef.current.delete(type);
+        }
+      };
+
+      return { unsubscribe };
+    },
+    [],
+  );
 
   return (
     <WebSocketContext.Provider value={{ isConnected, send, subscribe }}>

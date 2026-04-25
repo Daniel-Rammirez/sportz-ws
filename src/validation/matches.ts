@@ -44,3 +44,7 @@ export const updateScoreSchema = z.object({
   homeScore: z.coerce.number().int().nonnegative(),
   awayScore: z.coerce.number().int().nonnegative(),
 });
+
+export const updateMatchStatusSchema = z.object({
+  status: z.enum(["scheduled", "live", "finished"]),
+});

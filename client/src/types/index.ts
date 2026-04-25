@@ -33,3 +33,11 @@ export interface WSMessage {
   data?: unknown;
   message?: string;
 }
+
+export type MessageType =
+  | "Match Created"
+  | "Score Update"
+  | "Commentary"
+  | "Match Subscription"
+  | "Match Unsubscribe"
+  | "Welcome";

@@ -61,7 +61,7 @@ export default function MatchDetail() {
 
     send({ type: "Match Subscription", matchId: id });
 
-    const unsubCommentary = subscribe(
+    const { unsubscribe: unsubCommentary } = subscribe(
       "Commentary",
       (message: Record<string, unknown>) => {
         const entry = message.data as Commentary;
@@ -72,7 +72,7 @@ export default function MatchDetail() {
       },
     );
 
-    const unsubScore = subscribe("Score Update", () => {
+    const { unsubscribe: unsubScore } = subscribe("Score Update", () => {
       queryClient.invalidateQueries({ queryKey: ["match", id] });
       queryClient.invalidateQueries({ queryKey: ["matches"] });
     });

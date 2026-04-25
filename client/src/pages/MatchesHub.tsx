@@ -46,13 +46,17 @@ export default function MatchesHub() {
   );
 
   useEffect(() => {
-    return subscribe("Match Created", handleNewMatch);
+    const { unsubscribe } = subscribe("Match Created", handleNewMatch);
+
+    return unsubscribe;
   }, [subscribe, handleNewMatch]);
 
   useEffect(() => {
-    return subscribe("Score Update", () => {
+    const { unsubscribe } = subscribe("Score Update", () => {
       queryClient.invalidateQueries({ queryKey: ["matches"] });
     });
+
+    return unsubscribe;
   }, [subscribe, queryClient]);
 
   const filteredMatches =
@@ -137,9 +141,7 @@ export default function MatchesHub() {
           animate={{ opacity: 1 }}
           className="py-20 text-center"
         >
-          <p className="text-lg text-sportz-text-secondary">
-            No matches found
-          </p>
+          <p className="text-lg text-sportz-text-secondary">No matches found</p>
           <p className="mt-2 text-sm text-sportz-text-secondary/50">
             {filter !== "all"
               ? "Try a different filter"
