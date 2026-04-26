@@ -50,70 +50,59 @@ commentaryRouter.get("/", async (req, res) => {
 });
 
 commentaryRouter.post("/", async (req, res) => {
-  const matchIdValidationResponse = matchIdParamSchema.safeParse(req.params);
-
-  if (!matchIdValidationResponse.success) {
+  const parsedParams = matchIdParamSchema.safeParse(req.params);
+  if (!parsedParams.success) {
     return res.status(400).json({
       error: "Invalid match ID",
-      details: matchIdValidationResponse.error.issues,
+      details: parsedParams.error.issues,
     });
   }
 
-  const commentaryDataValidationResponse = createCommentarySchema.safeParse(
-    req.body,
-  );
-
-  if (!commentaryDataValidationResponse.success) {
+  const parsedBody = createCommentarySchema.safeParse(req.body);
+  if (!parsedBody.success) {
     return res.status(400).json({
       error: "Invalid payload",
-      details: commentaryDataValidationResponse.error.issues,
+      details: parsedBody.error.issues,
     });
   }
 
-  const commentaryData = commentaryDataValidationResponse.data;
-
+  const matchId = parsedParams.data.id;
+  const commentaryData = parsedBody.data;
   const { eventType, team } = commentaryData;
 
   try {
-    const [commentaryCreated] = await db
-      .insert(commentary)
-      .values({
-        matchId: matchIdValidationResponse.data.id,
-        ...commentaryData,
-      })
-      .returning();
+    const [match] = await db.select().from(matches).where(eq(matches.id, matchId));
+    if (!match) {
+      return res.status(404).json({ error: "Match not found." });
+    }
 
-    if (eventType === "goal" && team) {
-      const [match] = await db
-        .select()
-        .from(matches)
-        .where(eq(matches.id, matchIdValidationResponse.data.id));
+    const { commentaryCreated, updatedMatch } = await db.transaction(async (tx) => {
+      const [commentaryCreated] = await tx
+        .insert(commentary)
+        .values({ matchId, ...commentaryData })
+        .returning();
 
-      if (match) {
+      if (eventType === "goal" && team) {
         const isHome = team === match.homeTeam;
-
-        const [updatedMatch] = await db
+        const [updatedMatch] = await tx
           .update(matches)
           .set(
             isHome
               ? { homeScore: sql`${matches.homeScore} + 1` }
               : { awayScore: sql`${matches.awayScore} + 1` },
           )
-          .where(eq(matches.id, match.id))
+          .where(eq(matches.id, matchId))
           .returning();
-
-        if (res.app.locals.broadcastScoreUpdate) {
-          res.app.locals.broadcastScoreUpdate(updatedMatch.id, updatedMatch);
-        }
+        return { commentaryCreated, updatedMatch };
       }
-    }
 
-    if (res.app.locals.broadcastMatchCommentary) {
-      res.app.locals.broadcastMatchCommentary(
-        commentaryCreated.matchId,
-        commentaryCreated,
-      );
+      return { commentaryCreated, updatedMatch: null };
+    });
+
+    if (updatedMatch) {
+      res.app.locals.broadcastScoreUpdate?.(updatedMatch.id, updatedMatch);
     }
+    res.app.locals.broadcastMatchCommentary?.(commentaryCreated.matchId, commentaryCreated);
 
     return res.status(201).json({ data: commentaryCreated });
   } catch (error) {
