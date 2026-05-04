@@ -8,6 +8,9 @@ export default defineConfig({
   envDir: "..",
   server: {
     port: 3000,
+    watch: {
+      usePolling: true,
+    },
     proxy: {
       "/matches": {
         target: backendUrl,
