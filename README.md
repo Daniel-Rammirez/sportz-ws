@@ -53,14 +53,46 @@ pnpm db:migrate
 ### Development
 
 ```bash
-# Start backend (port 3000)
+# Start backend (port 8000)
 pnpm dev
 
-# Start frontend (port 5173) — in a separate terminal
+# Start frontend (port 3000) — in a separate terminal
 cd client && pnpm dev
 ```
 
 The frontend proxies `/matches` and `/ws` to the backend, so both servers need to be running.
+
+### Docker (alternative)
+
+If you'd rather not install Node/pnpm locally, you can run everything in Docker. The only requirement is [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+```bash
+cp .env.example .env
+# Add your DATABASE_URL to .env
+
+docker compose up --build
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend | http://localhost:8000 |
+
+On code changes, hot reload works automatically — the source is mounted into the containers as a volume.
+
+To run migrations inside the container:
+
+```bash
+docker compose exec backend pnpm db:migrate
+```
+
+**Local Postgres** (optional — skip if you're using Neon or another hosted DB):
+
+```bash
+# Start with the local DB profile and update DATABASE_URL in .env:
+# DATABASE_URL=postgresql://sportz:sportz@db:5432/sportz
+docker compose --profile local-db up --build
+```
 
 ## API
 
@@ -74,7 +106,7 @@ The frontend proxies `/matches` and `/ws` to the backend, so both servers need t
 
 ## WebSocket
 
-Connect to `ws://localhost:3000/ws`. Send JSON payloads to subscribe or unsubscribe from a match:
+Connect to `ws://localhost:8000/ws`. Send JSON payloads to subscribe or unsubscribe from a match:
 
 ```json
 { "type": "Match Subscription", "matchId": "<uuid>" }
