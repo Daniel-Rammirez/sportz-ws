@@ -1,0 +1,49 @@
+services:
+  backend:
+    build: .
+    container_name: sportz-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      VITE_PORT: "8000"
+
+  frontend:
+    build: ./client
+    container_name: sportz-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      - backend
+
+  # Local Postgres — only needed if you want to run the DB locally instead of Neon
+  # To use: update DATABASE_URL in .env to postgresql://sportz:sportz@db:5432/sportz
+  db:
+    image: postgres:17-alpine
+    container_name: sportz-db
+    profiles: ["local-db"]
+    environment:
+      POSTGRES_USER: sportz
+      POSTGRES_PASSWORD: sportz
+      POSTGRES_DB: sportz
+    ports:
+      - "5432:5432"
+    volumes:
+      - sportz_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sportz"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sportz_db_data:
