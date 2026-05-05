@@ -94,6 +94,40 @@ docker compose exec backend pnpm db:migrate
 docker compose --profile local-db up --build
 ```
 
+## Roadmap
+
+### Match management
+- Filter matches by sport, status, date range, and team name
+- Pagination for match list and commentary feed
+- Match deletion and editing before kick-off
+
+### Statistics
+- Per-match stats: shots on goal, possession %, cards, fouls
+- Player-level stats derived from commentary events (goals, assists, cards)
+- Head-to-head history between two teams
+
+### Tournaments & leagues
+- Group matches into leagues or tournaments
+- Automatic standings table (points, wins, losses, goal difference)
+- Knockout bracket support
+
+### Notifications
+- In-app alerts for goals and match status changes
+- Email notifications for subscribed matches
+- Push notifications (PWA)
+
+### Player profiles
+- Dedicated player table linked to commentary actors
+- Player pages with career stats and match history
+- Team rosters
+
+### Multi-sport support
+- Sport-specific scoring rules (basketball points, tennis sets, etc.)
+- Sport-specific event types per match type
+- Custom periods per sport (halves, quarters, sets)
+
+---
+
 ## API
 
 | Method | Path | Description |
